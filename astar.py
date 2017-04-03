@@ -73,8 +73,14 @@ class GridWorld():
 
     def _add_swamp(self, mouse_pos):
         """ Adds a swamp tile in the cell that mouse_pos indicates """
-        # insert swamp code here.
-        pass
+        swamp_coord = (mouse_pos[0]//50, mouse_pos[1]//50)
+        if self._is_occupied(swamp_coord):
+            if self.actors[swamp_coord].removable:
+                self.actors.pop(swamp_coord, None)
+        elif swamp_coord != self.cake.cell_coordinates:
+            swamp = ObstacleTile(swamp_coord, self, './images/swamp.jpg',
+                                 is_unpassable=False, terrain_cost=3)
+            self.actors[swamp_coord] = swamp
 
     def _add_lava(self, mouse_pos):
         """ Adds a lava tile in the cell that mouse_pos indicates """
@@ -108,14 +114,18 @@ class GridWorld():
                 elif event.type is pygame.MOUSEBUTTONDOWN:
                     if self.add_tile_type == 'lava':
                         self._add_lava(event.pos)
-                    # insert swamp code here
+                    # Swamp
+                    if self.add_tile_type == 'swamp':
+                        self._add_swamp(event.pos)
                 elif event.type is pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.paul.run_astar(self.cake.cell_coordinates, self)
                         self.paul.get_path()
                     elif event.key == pygame.K_l:
                         self.add_tile_type = 'lava'
-                    # insert swamp code here
+                    # Swamp
+                    elif event.key == pygame.K_s:
+                        self.add_tile_type = 'swamp'
 
 
 class Actor(object):
@@ -168,9 +178,9 @@ class Cell():
 
     def draw(self):
         COST_TO_DRAW = ''
-        # COST_TO_DRAW = self.g_cost
-        # COST_TO_DRAW = self.h_cost
-        # COST_TO_DRAW = self.f_cost
+        #COST_TO_DRAW = self.g_cost
+        #COST_TO_DRAW = self.h_cost
+        #COST_TO_DRAW = self.f_cost
         line_width = 2
         rect = pygame.Rect(self.coordinates, self.dimensions)
         pygame.draw.rect(self.draw_screen, self.color, rect, line_width)
@@ -196,14 +206,29 @@ class Paul(Actor):
         """ returns list of valid coords that are adjacent to the argument,
             open, and not in the closed list. """
         # modify directions and costs as needed
-        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-        all_adj = [self.world._add_coords(coords, d) for d in directions]
-        in_bounds = [self.is_valid(c) for c in all_adj]
+        directions_adj = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        directions_diag = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        directions_hop = [(2, 0), (0, 2), (-2, 0), (0, -2)]
+        print(directions_hop)
+        all_adj = [self.world._add_coords(coords, d) for d in directions_adj]
+        all_diag = [self.world._add_coords(coords, d) for d in directions_diag]
+        all_hop = [self.world._add_coords(coords, d) for d in directions_hop]
+        in_bounds_adj = [self.is_valid(c) for c in all_adj]
+        in_bounds_diag = [self.is_valid(c) for c in all_diag]
+        in_bounds_hop = [self.is_valid(c) for c in all_hop]
         costs = []
         open_adj = []
         for i, coord in enumerate(all_adj):
-            if(in_bounds[i]):
+            if(in_bounds_adj[i]):
                 costs.append(1 + self.world.get_terrain_cost(coord))
+                open_adj.append(coord)
+        for i, coord in enumerate(all_diag):
+            if(in_bounds_diag[i]):
+                costs.append(3 + self.world.get_terrain_cost(coord))
+                open_adj.append(coord)
+        for i, coord in enumerate(all_hop):
+            if(in_bounds_hop[i]):
+                costs.append(8 + self.world.get_terrain_cost(coord))
                 open_adj.append(coord)
         return open_adj, costs
 

@@ -1,0 +1,5 @@
+The g value is the cumulative cost of each move up to the current tile. At the end it would be the total cost that it took to get to the end.
+
+The h value is the cost from the tile to the cake but only traveling along the grid. It is the smallest cost to get to the end by only traveling along the grid and not factoring in lava or swamps.
+
+The f value is the sum of the h and g values. It is the total cost because it adds the smallest cost (h) that it should take to get to the end following the grid and the g value which adds the additional cost of steps needed to go around the lava that went backwards along the grid.
